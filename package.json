@@ -1,0 +1,14 @@
+{
+  "name": "user-dashboard",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node --experimental-modules --experimental-json-modules index.js",
+    "serve": "npx http-server . -p 8080 -o"
+  },
+  "keywords": ["dashboard", "users", "frontend"],
+  "author": "",
+  "license": "ISC",
+  "description": "Dashboard moderno para visualização e gerenciamento de usuários"
+}

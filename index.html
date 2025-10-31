@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Usuários</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1 class="title">
+                    <span class="icon">👥</span>
+                    Dashboard de Usuários
+                </h1>
+                <p class="subtitle">Gerenciamento completo de usuários</p>
+            </div>
+        </header>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-icon">👤</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="totalUsers">0</div>
+                    <div class="stat-label">Total de Usuários</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="activeUsers">0</div>
+                    <div class="stat-label">Usuários Ativos</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">👑</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="adminUsers">0</div>
+                    <div class="stat-label">Administradores</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📧</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="verifiedUsers">0</div>
+                    <div class="stat-label">Verificados (2FA)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="users-container" id="usersContainer">
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Carregando usuários...</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+
