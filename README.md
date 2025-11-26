@@ -55,11 +55,10 @@ Cada card de usuário exibe:
 - Nome completo
 - Email
 - Telefone
-- Perfil (Admin/Cliente)
-- Status (Ativo/Inativo)
-- Data de criação
-- Último login
-- Status de verificação 2FA
+- Loja associada
+- Último login (com data e hora)
+- ID único do usuário
+- Status de atividade baseado no último login
 
 ## 🔍 Filtros Disponíveis
 
@@ -84,6 +83,7 @@ O dashboard é totalmente responsivo e se adapta a:
 ## 📝 Notas
 
 - Os dados são carregados diretamente do arquivo `users.json`
+- O dashboard foi adaptado para o novo formato (`userId`, `userName`, `storeName`, `lastLogin`, `phone`)
 - Não requer instalação de dependências para funcionar
 - Funciona em todos os navegadores modernos
 

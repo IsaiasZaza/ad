@@ -16,8 +16,9 @@ class UserDashboard {
                 throw new Error(`Erro ao carregar: ${response.status}`);
             }
             
-            this.users = await response.json();
-            this.filteredUsers = this.users;
+            const data = await response.json();
+            this.users = data.map(user => this.normalizeUser(user));
+            this.filteredUsers = [...this.users];
             
             loading.style.display = 'none';
             this.init();
@@ -37,6 +38,19 @@ class UserDashboard {
         this.renderStats();
         this.renderUsers();
         this.setupEventListeners();
+    }
+
+    normalizeUser(user) {
+        const fallbackName = user.userName || user.name || 'Usuário sem nome';
+        const fallbackId = user.userId || user.id || this.generateTempId();
+        return {
+            id: fallbackId,
+            name: fallbackName,
+            email: user.email || 'Não informado',
+            phone: user.phone || '',
+            storeName: user.storeName || 'Loja não informada',
+            lastLogin: user.lastLogin || null
+        };
     }
 
     setupEventListeners() {
@@ -73,14 +87,14 @@ class UserDashboard {
 
     renderStats() {
         const totalUsers = this.users.length;
-        const activeUsers = this.users.filter(u => u.isActive).length;
-        const adminUsers = this.users.filter(u => u.role === 'ADMIN').length;
-        const verifiedUsers = this.users.filter(u => u.last2FAVerifiedAt !== null).length;
+        const recentLogins = this.users.filter(u => this.isLoginRecent(u.lastLogin, 1)).length;
+        const uniqueStores = new Set(this.users.map(u => u.storeName)).size;
+        const phonesAvailable = this.users.filter(u => Boolean(u.phone)).length;
 
         document.getElementById('totalUsers').textContent = totalUsers;
-        document.getElementById('activeUsers').textContent = activeUsers;
-        document.getElementById('adminUsers').textContent = adminUsers;
-        document.getElementById('verifiedUsers').textContent = verifiedUsers;
+        document.getElementById('activeUsers').textContent = recentLogins;
+        document.getElementById('adminUsers').textContent = uniqueStores;
+        document.getElementById('verifiedUsers').textContent = phonesAvailable;
     }
 
     renderUsers() {
@@ -89,22 +103,20 @@ class UserDashboard {
 
         loading.style.display = 'none';
 
-        if (this.users.length === 0) {
+        if (this.filteredUsers.length === 0) {
             container.innerHTML = '<div class="no-results"><p>Nenhum usuário encontrado</p></div>';
             return;
         }
 
-        container.innerHTML = this.users.map(user => this.createUserCard(user)).join('');
+        container.innerHTML = this.filteredUsers.map(user => this.createUserCard(user)).join('');
     }
 
     createUserCard(user) {
         const initials = this.getInitials(user.name);
-        const isActive = user.isActive;
-        const isVerified = user.last2FAVerifiedAt !== null;
-        const roleClass = user.role.toLowerCase();
         const formattedPhone = user.phone || 'Não informado';
-        const lastLogin = user.lastLogin ? this.formatDate(user.lastLogin) : 'Nunca';
-        const createdAt = this.formatDate(user.createdAt);
+        const lastLogin = user.lastLogin ? this.formatDate(user.lastLogin) : 'Nunca acessou';
+        const recentStatus = this.isLoginRecent(user.lastLogin, 7);
+        const storeName = this.escapeHtml(user.storeName);
 
         return `
             <div class="user-card">
@@ -112,7 +124,7 @@ class UserDashboard {
                     <div class="user-avatar">${initials}</div>
                     <div class="user-info">
                         <div class="user-name">${this.escapeHtml(user.name)}</div>
-                        <span class="user-role ${roleClass}">${user.role}</span>
+                        <span class="user-store">${storeName}</span>
                     </div>
                 </div>
                 <div class="user-details">
@@ -136,9 +148,9 @@ class UserDashboard {
                     </div>
                     <div class="user-detail">
                         <svg class="user-detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"></path>
                         </svg>
-                        <span>Criado em: ${createdAt}</span>
+                        <span>Loja: ${storeName}</span>
                     </div>
                     <div class="user-detail">
                         <svg class="user-detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -146,29 +158,44 @@ class UserDashboard {
                         </svg>
                         <span>Último login: ${lastLogin}</span>
                     </div>
+                    <div class="user-detail">
+                        <svg class="user-detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8a4 4 0 10-8 0v6a4 4 0 108 0V8z"></path>
+                        </svg>
+                        <span>ID: <code class="user-id">${this.escapeHtml(user.id)}</code></span>
+                    </div>
                 </div>
                 <div class="user-status">
-                    <div class="status-indicator ${isActive ? 'active' : 'inactive'}"></div>
-                    <span class="status-text">${isActive ? 'Ativo' : 'Inativo'}</span>
-                    ${isVerified ? '<span class="user-verified">✓ Verificado</span>' : ''}
+                    <div class="status-indicator ${recentStatus ? 'active' : 'inactive'}"></div>
+                    <span class="status-text">${recentStatus ? 'Login recente' : 'Sem acesso recente'}</span>
                 </div>
             </div>
         `;
     }
 
-    getInitials(name) {
+    getInitials(name = '') {
         return name
             .split(' ')
             .map(word => word[0])
             .filter(Boolean)
             .slice(0, 2)
             .join('')
-            .toUpperCase();
+            .toUpperCase() || 'NA';
+    }
+
+    isLoginRecent(dateString, days = 7) {
+        if (!dateString) return false;
+        const date = new Date(dateString);
+        if (Number.isNaN(date.getTime())) return false;
+        const diff = Date.now() - date.getTime();
+        const diffDays = diff / (1000 * 60 * 60 * 24);
+        return diffDays <= days;
     }
 
     formatDate(dateString) {
-        if (!dateString) return 'N/A';
+        if (!dateString) return 'Não informado';
         const date = new Date(dateString);
+        if (Number.isNaN(date.getTime())) return 'Não informado';
         return date.toLocaleDateString('pt-BR', {
             day: '2-digit',
             month: '2-digit',
@@ -179,9 +206,17 @@ class UserDashboard {
     }
 
     escapeHtml(text) {
+        if (text === undefined || text === null) return '';
         const div = document.createElement('div');
-        div.textContent = text;
+        div.textContent = String(text);
         return div.innerHTML;
+    }
+
+    generateTempId() {
+        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+            return crypto.randomUUID();
+        }
+        return `tmp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     }
 }
 
